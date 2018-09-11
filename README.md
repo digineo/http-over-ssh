@@ -2,7 +2,7 @@ HTTP over SSH
 =============
 
 This dynamic HTTP proxy tunnels your HTTP requests through SSH connections using public key authentication.
-It is highly experimental and not suitable for production use.
+It is not recommended for production use.
 
 The intention to develope this program is the requirement of polling [Prometheus exporters](https://prometheus.io/docs/instrumenting/exporters/) through SSH.
 

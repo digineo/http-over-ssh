@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -41,11 +42,26 @@ func (client *client) dial(network, address string) (net.Conn, error) {
 	client.mtx.Lock()
 	defer client.mtx.Unlock()
 
+	retried := false
+
+retry:
 	if client.sshClient == nil {
 		if err := client.connect(); err != nil {
 			return nil, err
 		}
 	}
 
-	return client.sshClient.Dial(network, address)
+	log.Printf("forwarding via %s to %s", client.key, address)
+
+	conn, err := client.sshClient.Dial(network, address)
+
+	if err == io.EOF && !retried {
+		// ssh connection broken
+		client.sshClient.Close()
+		client.sshClient = nil
+		retried = true
+		goto retry
+	}
+
+	return conn, err
 }
