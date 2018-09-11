@@ -22,6 +22,14 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		address: parts[1],
 	}
 
+	// extract username
+	if i := strings.IndexByte(key.address, '@'); i > 0 {
+		key.username = key.address[i:]
+		key.address = key.address[i+1:]
+	} else {
+		key.username = proxy.sshConfig.User
+	}
+
 	// get client
 	client, err := proxy.getClient(key)
 	if err != nil {

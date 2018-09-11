@@ -48,7 +48,11 @@ func (proxy *Proxy) getClient(key clientKey) (*client, error) {
 	// try to connect
 	log.Printf("establishing SSH connection to %+v", key)
 
-	conn, err := ssh.Dial("tcp", key.address, proxy.sshConfig)
+	// copy sshConfig and set username
+	sshConfig := *proxy.sshConfig
+	sshConfig.User = key.username
+
+	conn, err := ssh.Dial("tcp", key.address, &sshConfig)
 	if err != nil {
 		return nil, err
 	}

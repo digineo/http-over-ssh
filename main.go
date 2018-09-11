@@ -13,7 +13,7 @@ import (
 
 func main() {
 	listen := flag.String("listen", ":8080", "listen on")
-	sshUser := flag.String("user", "root", "SSH username")
+	sshUser := flag.String("user", "root", "default SSH username")
 	sshTimeout := flag.Duration("timeout", time.Second*10, "SSH connection timeout")
 	flag.Parse()
 
