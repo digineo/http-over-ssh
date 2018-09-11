@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"log"
 	"net"
@@ -13,61 +12,60 @@ import (
 
 // Proxy holds the HTTP client and the SSH connection pool
 type Proxy struct {
+	clients   map[clientKey]*client
+	sshConfig *ssh.ClientConfig
+	mtx       sync.Mutex
+}
+
+type client struct {
+	sshClient  *ssh.Client
 	httpClient *http.Client
-	sshClients map[string]*ssh.Client
-	sshConfig  *ssh.ClientConfig
-	mtx        sync.Mutex
+}
+
+type clientKey struct {
+	address  string
+	username string
 }
 
 // NewProxy creates a new proxy
 func NewProxy() *Proxy {
-	proxy := &Proxy{
-		sshClients: make(map[string]*ssh.Client),
+	return &Proxy{
+		clients: make(map[clientKey]*client),
 	}
-	proxy.httpClient = &http.Client{
-		Transport: &http.Transport{
-			DialContext: proxy.dialContext,
-			DialTLS: func(network, addr string) (net.Conn, error) {
-				return nil, errors.New("not implemented")
-			},
-		},
-	}
-
-	return proxy
-}
-
-// dialContext is used by the HTTP client
-func (proxy *Proxy) dialContext(ctx context.Context, network, addr string) (net.Conn, error) {
-	proxyCtx := ctx.(*proxyContext)
-
-	sshClient, err := proxyCtx.getClient()
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: DialContext
-	return sshClient.Dial(network, addr)
 }
 
 // getClient returns a connected SSH client
-func (proxy *Proxy) getClient(address string) (*ssh.Client, error) {
+func (proxy *Proxy) getClient(key clientKey) (*client, error) {
 	proxy.mtx.Lock()
 	defer proxy.mtx.Unlock()
 
 	// connection established?
-	client, _ := proxy.sshClients[address]
-	if client != nil {
-		return client, nil
+	pClient, _ := proxy.clients[key]
+	if pClient != nil {
+		return pClient, nil
 	}
 
 	// try to connect
-	log.Println("establishing SSH connection to", address)
-	conn, err := ssh.Dial("tcp", address, proxy.sshConfig)
+	log.Printf("establishing SSH connection to %+v", key)
+
+	conn, err := ssh.Dial("tcp", key.address, proxy.sshConfig)
 	if err != nil {
 		return nil, err
 	}
 
+	pClient = &client{
+		sshClient: conn,
+		httpClient: &http.Client{
+			Transport: &http.Transport{
+				Dial: conn.Dial,
+				DialTLS: func(network, addr string) (net.Conn, error) {
+					return nil, errors.New("not implemented")
+				},
+			},
+		},
+	}
+
 	// set and return the new connection
-	proxy.sshClients[address] = conn
-	return conn, nil
+	proxy.clients[key] = pClient
+	return pClient, nil
 }

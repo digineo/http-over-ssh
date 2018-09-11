@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,6 +18,18 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	key := clientKey{
+		address: parts[1],
+	}
+
+	// get client
+	client, err := proxy.getClient(key)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		fmt.Fprintln(w, err.Error())
+		return
+	}
+
 	// build a new request
 	req, err := http.NewRequest(r.Method, "http://"+parts[2], nil)
 	if err != nil {
@@ -27,12 +38,11 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// set context and body
-	req = req.WithContext(&proxyContext{context.Background(), proxy, parts[1]})
+	// set body
 	req.Body = r.Body
 
 	// do the request
-	res, err := proxy.httpClient.Do(req)
+	res, err := client.httpClient.Do(req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		fmt.Fprintln(w, err.Error())
