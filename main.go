@@ -31,7 +31,7 @@ func main() {
 	}
 
 	proxy := NewProxy()
-	proxy.sshConfig = &ssh.ClientConfig{
+	proxy.sshConfig = ssh.ClientConfig{
 		Timeout: *sshTimeout,
 		User:    *sshUser,
 		Auth:    authMethods,

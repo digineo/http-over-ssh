@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -13,18 +12,8 @@ import (
 // Proxy holds the HTTP client and the SSH connection pool
 type Proxy struct {
 	clients   map[clientKey]*client
-	sshConfig *ssh.ClientConfig
+	sshConfig ssh.ClientConfig
 	mtx       sync.Mutex
-}
-
-type client struct {
-	sshClient  *ssh.Client
-	httpClient *http.Client
-}
-
-type clientKey struct {
-	address  string
-	username string
 }
 
 // NewProxy creates a new proxy
@@ -34,7 +23,7 @@ func NewProxy() *Proxy {
 	}
 }
 
-// getClient returns a connected SSH client
+// getClient returns a (un)connected SSH client
 func (proxy *Proxy) getClient(key clientKey) (*client, error) {
 	proxy.mtx.Lock()
 	defer proxy.mtx.Unlock()
@@ -45,26 +34,16 @@ func (proxy *Proxy) getClient(key clientKey) (*client, error) {
 		return pClient, nil
 	}
 
-	// try to connect
-	log.Printf("establishing SSH connection to %+v", key)
-
-	// copy sshConfig and set username
-	sshConfig := *proxy.sshConfig
-	sshConfig.User = key.username
-
-	conn, err := ssh.Dial("tcp", key.address, &sshConfig)
-	if err != nil {
-		return nil, err
-	}
-
 	pClient = &client{
-		sshClient: conn,
-		httpClient: &http.Client{
-			Transport: &http.Transport{
-				Dial: conn.Dial,
-				DialTLS: func(network, addr string) (net.Conn, error) {
-					return nil, errors.New("not implemented")
-				},
+		key:       key,
+		sshConfig: proxy.sshConfig, // make copy
+	}
+	pClient.sshConfig.User = key.username
+	pClient.httpClient = &http.Client{
+		Transport: &http.Transport{
+			Dial: pClient.dial,
+			DialTLS: func(network, addr string) (net.Conn, error) {
+				return nil, errors.New("not implemented")
 			},
 		},
 	}
