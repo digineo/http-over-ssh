@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"sync"
 
 	"golang.org/x/crypto/ssh"
@@ -20,14 +21,20 @@ type client struct {
 
 type clientKey struct {
 	address  string
+	port     int
 	username string
+}
+
+// hostPort returns the host joined with the port
+func (key *clientKey) hostPort() string {
+	return net.JoinHostPort(key.address, strconv.Itoa(key.port))
 }
 
 // establishes the SSH connection and sets up the HTTP client
 func (client *client) connect() error {
 	log.Printf("establishing SSH connection to %+v", client.key)
 
-	sshClient, err := ssh.Dial("tcp", client.key.address, &client.sshConfig)
+	sshClient, err := ssh.Dial("tcp", client.key.hostPort(), &client.sshConfig)
 	if err != nil {
 		return err
 	}

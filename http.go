@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 )
+
+const defaultPort = 22
 
 func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
@@ -28,6 +31,21 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		key.address = key.address[i+1:]
 	} else {
 		key.username = proxy.sshConfig.User
+	}
+
+	// extract port
+	// TODO: Add support for IPv6 addresses
+	if i := strings.IndexByte(key.address, ':'); i > 0 {
+		port, err := strconv.Atoi(key.address[i+1:])
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, "unable to parse port number:", err)
+			return
+		}
+		key.port = port
+		key.address = key.address[:i]
+	} else {
+		key.port = defaultPort
 	}
 
 	// get client
