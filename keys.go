@@ -2,6 +2,7 @@ package main
 
 import (
 	"io/ioutil"
+	"log"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -18,7 +19,10 @@ func getKeyFile(path string) (ssh.Signer, error) {
 func readPrivateKeys(paths ...string) (methods []ssh.AuthMethod) {
 	for _, path := range paths {
 		if signer, err := getKeyFile(path); err == nil {
+			log.Println("loaded private key", path)
 			methods = append(methods, ssh.PublicKeys(signer))
+		} else {
+			log.Println("unable to load private key", path)
 		}
 	}
 	return methods
