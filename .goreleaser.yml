@@ -1,0 +1,39 @@
+# Make sure to check the documentation at http://goreleaser.com
+project_name: http-over-ssh
+
+before:
+  hooks:
+  - go mod download
+
+builds:
+- goos:   [linux, freebsd, windows, darwin]
+  goarch: [amd64, arm64]
+  ignore:
+  - goos:   freebsd
+    goarch: arm64
+  - goos:   darwin
+    goarch: arm64
+  - goos:   windows
+    goarch: arm64
+
+archive:
+  replacements:
+    darwin:   macOS
+    windows:  win
+    amd64:    64-bit
+
+release:
+  prerelease: auto
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort:       asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'

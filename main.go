@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -33,7 +34,16 @@ var (
 	sshTimeout = 10 * time.Second
 )
 
+// build flags
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
+	fmt.Printf("%s %v, commit %v, built at %v", os.Args[0], version, commit, date)
+
 	flag.StringVar(&listen, "listen", listen, "listen on")
 	flag.StringVar(&sshUser, "user", sshUser, "default SSH username")
 	flag.DurationVar(&sshTimeout, "timeout", sshTimeout, "SSH connection timeout")
