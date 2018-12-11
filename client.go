@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -30,9 +31,17 @@ func (key *clientKey) hostPort() string {
 	return net.JoinHostPort(key.address, strconv.Itoa(key.port))
 }
 
+func (key *clientKey) String() string {
+	hp := key.hostPort()
+	if key.username == "" {
+		return hp
+	}
+	return fmt.Sprintf("%s@%s", key.username, hp)
+}
+
 // establishes the SSH connection and sets up the HTTP client
 func (client *client) connect() error {
-	log.Printf("establishing SSH connection to %+v", client.key)
+	log.Printf("establishing SSH connection to %s", client.key.String())
 
 	sshClient, err := ssh.Dial("tcp", client.key.hostPort(), &client.sshConfig)
 	if err != nil {
@@ -40,7 +49,6 @@ func (client *client) connect() error {
 	}
 
 	client.sshClient = sshClient
-
 	return nil
 }
 
@@ -58,10 +66,9 @@ retry:
 		}
 	}
 
-	log.Printf("forwarding via %s to %s", client.key, address)
+	log.Printf("forwarding via %s to %s", client.key.String(), address)
 
 	conn, err := client.sshClient.Dial(network, address)
-
 	if err == io.EOF && !retried {
 		// ssh connection broken
 		client.sshClient.Close()

@@ -11,7 +11,6 @@ import (
 const defaultPort = 22
 
 func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
 	// parts[0] = ignored, should be empty
 	// parts[1] = jump host
 	// parts[2] = destination address
