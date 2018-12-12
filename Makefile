@@ -1,3 +1,5 @@
+export GO111MODULE=on
+
 .PHONY: help
 help: ## prints this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -5,15 +7,15 @@ help: ## prints this help
 
 .PHONY: dry-run
 dry-run: ## prepares a release, but does not publish it
-	goreleaser release --skip-publish
+	goreleaser release --rm-dist --skip-publish
 
 .PHONY: release
 release: github_token ## release the current tag
-	goreleaser release
+	goreleaser release --rm-dist
 
 .PHONY: snapshot
 snapshot: github_token ## release HEAD as "$last_tag-next"
-	goreleaser release --snapshot
+	goreleaser release --rm-dist --snapshot --skip-publish
 
 .PHONY: clean
 clean: ## removes the dist directory
