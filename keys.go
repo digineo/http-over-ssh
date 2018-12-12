@@ -22,7 +22,7 @@ func readPrivateKeys(paths ...string) (methods []ssh.AuthMethod) {
 			log.Println("loaded private key", path)
 			methods = append(methods, ssh.PublicKeys(signer))
 		} else {
-			log.Println("unable to load private key", path)
+			log.Printf("unable to load private key %q: %v", path, err)
 		}
 	}
 	return methods

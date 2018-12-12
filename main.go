@@ -42,7 +42,7 @@ var (
 )
 
 func main() {
-	fmt.Printf("%s %v, commit %v, built at %v", os.Args[0], version, commit, date)
+	fmt.Printf("%s %v, commit %v, built at %v\n", os.Args[0], version, commit, date)
 
 	flag.StringVar(&listen, "listen", listen, "listen on")
 	flag.StringVar(&sshUser, "user", sshUser, "default SSH username")
@@ -53,7 +53,7 @@ func main() {
 
 	authMethods := readPrivateKeys(sshKeys...)
 	if len(authMethods) == 0 {
-		log.Panicln("no SSH keys found")
+		log.Fatal("no SSH keys found")
 	}
 
 	proxy := NewProxy()
@@ -70,7 +70,7 @@ func main() {
 	log.Println("listening on", listen)
 	listener, err := net.Listen("tcp", listen)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 
 	log.Fatal(http.Serve(listener, proxy))
