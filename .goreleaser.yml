@@ -8,6 +8,8 @@ before:
 builds:
 - goos:   [linux, freebsd, windows, darwin]
   goarch: [amd64, arm64]
+  env:
+  - CGO_ENABLED=0
   ignore:
   - goos:   freebsd
     goarch: arm64
@@ -21,6 +23,15 @@ archive:
     darwin:   macOS
     windows:  win
     amd64:    64-bit
+
+dockers:
+  - binary:   http-over-ssh
+    goos:     linux
+    goarch:   amd64
+    image_templates:
+    - "digineo/http-over-ssh:latest"
+    - "digineo/http-over-ssh:{{ .Version }}"
+    skip_push: true
 
 release:
   prerelease: auto

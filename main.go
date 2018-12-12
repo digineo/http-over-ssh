@@ -22,16 +22,26 @@ var home = func() string {
 	return os.Getenv("HOME")
 }()
 
+var sshKeyDir = or(os.Getenv("HOS_KEY_DIR"), filepath.Join(home, ".ssh"))
+
 var sshKeys = []string{
-	filepath.Join(home, ".ssh/id_rsa"),
-	filepath.Join(home, ".ssh/id_ed25519"),
+	filepath.Join(sshKeyDir, "id_rsa"),
+	filepath.Join(sshKeyDir, "id_ed25519"),
 }
 
 // command line flags
 var (
-	listen     = "[::1]:8080"
-	sshUser    = "root"
-	sshTimeout = 10 * time.Second
+	listen     = or(os.Getenv("HOS_LISTEN"), "[::1]:8080")
+	sshUser    = or(os.Getenv("HOS_USER"), "root")
+	sshTimeout = func() time.Duration {
+		dur := os.Getenv("HOS_TIMEOUT")
+		if dur != "" {
+			if d, err := time.ParseDuration(dur); err != nil {
+				return d
+			}
+		}
+		return 10 * time.Second
+	}()
 )
 
 // build flags
@@ -74,4 +84,11 @@ func main() {
 	}
 
 	log.Fatal(http.Serve(listener, proxy))
+}
+
+func or(s, alt string) string {
+	if s != "" {
+		return s
+	}
+	return alt
 }
