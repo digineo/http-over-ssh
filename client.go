@@ -1,12 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 
 	"golang.org/x/crypto/ssh"
@@ -24,6 +26,68 @@ type clientKey struct {
 	address  string
 	port     int
 	username string
+}
+
+func parseJumpHost(jmp string) (ck clientKey, err error) {
+	if jmp == "" {
+		err = errors.New("empty jump host")
+		return
+	}
+
+	if pos := strings.IndexRune(jmp, '@'); pos >= 0 {
+		if len(jmp) <= pos+1 {
+			err = errors.New("empty jump host")
+			return
+		}
+		ck.username = jmp[0:pos]
+		jmp = jmp[pos+1:]
+	}
+
+	if l := len(jmp); jmp[0] == '[' {
+		if l <= 2 {
+			err = errors.New("empty jump host")
+			return
+		}
+		if jmp[l-1] == ']' {
+			// IPv6 address without port
+			ck.address = jmp[1 : l-1]
+			return
+		}
+
+		// with port
+		var p string
+		ck.address, p, err = net.SplitHostPort(jmp)
+		if err != nil {
+			return
+		}
+		ck.port, err = strconv.Atoi(p)
+		if err != nil {
+			return
+		}
+		return
+	}
+
+	col := strings.IndexRune(jmp, ':')
+	if col < 0 || col != strings.LastIndexByte(jmp, byte(':')) {
+		// IPv6 address?
+		ck.address = jmp
+		return
+	}
+
+	var p string
+	ck.address, p, err = net.SplitHostPort(jmp)
+	if err != nil {
+		return
+	}
+	ck.port, err = strconv.Atoi(p)
+	if err != nil {
+		return
+	}
+
+	if ck.address == "" {
+		err = errors.New("empty jump host")
+	}
+	return
 }
 
 // hostPort returns the host joined with the port
