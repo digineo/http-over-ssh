@@ -4,22 +4,35 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
 const defaultPort = 22
 
 func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// parts[0] = ignored, should be empty
-	// parts[1] = jump host
-	// parts[2] = destination address
-	parts := strings.SplitN(r.RequestURI, "/", 3)
-	if len(parts) != 3 {
-		w.WriteHeader(http.StatusUnprocessableEntity)
+	target, err := url.Parse(r.RequestURI)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "error parsing URL:", err)
 		return
 	}
 
-	key, err := parseJumpHost(parts[1])
+	if r.Host == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "hostname missing:", err)
+		return
+	}
+
+	// parts[0] = ignored, should be empty
+	// parts[1] = destination address
+	parts := strings.SplitN(target.Path, "/", 2)
+	if len(parts) != 2 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	key, err := parseJumpHost(target.Host)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, "error parsing jump host:", err)
@@ -38,7 +51,7 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// build a new request
-	req, err := http.NewRequest(r.Method, "http://"+parts[2], nil)
+	req, err := http.NewRequest(r.Method, target.Scheme+"://"+parts[1], nil)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, "unable to build request:", err)

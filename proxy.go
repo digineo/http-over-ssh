@@ -38,7 +38,9 @@ func (proxy *Proxy) getClient(key clientKey) (*client, error) {
 		key:       key,
 		sshConfig: proxy.sshConfig, // make copy
 	}
-	pClient.sshConfig.User = key.username
+	if key.username != "" {
+		pClient.sshConfig.User = key.username
+	}
 	pClient.httpClient = &http.Client{
 		Transport: &http.Transport{
 			Dial: pClient.dial,
