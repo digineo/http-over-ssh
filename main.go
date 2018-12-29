@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -77,13 +78,11 @@ func main() {
 		},
 	}
 
-	log.Println("listening on", listen)
-	listener, err := net.Listen("tcp", listen)
-	if err != nil {
-		log.Fatal(err)
-	}
+	http.Handle("/metrics", promhttp.Handler())
+	http.Handle("/", proxy)
 
-	log.Fatal(http.Serve(listener, proxy))
+	log.Println("listening on", listen)
+	log.Fatal(http.ListenAndServe(listen, nil))
 }
 
 func or(s, alt string) string {
