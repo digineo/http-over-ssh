@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/crypto/ssh"
 )
@@ -55,6 +56,7 @@ var (
 func main() {
 	fmt.Printf("%s %v, commit %v, built at %v\n", os.Args[0], version, commit, date)
 
+	enableMetrics := flag.Bool("metrics", true, "enable metrics")
 	flag.StringVar(&listen, "listen", listen, "listen on")
 	flag.StringVar(&sshUser, "user", sshUser, "default SSH username")
 	flag.DurationVar(&sshTimeout, "timeout", sshTimeout, "SSH connection timeout")
@@ -78,9 +80,12 @@ func main() {
 		},
 	}
 
-	http.Handle("/metrics", promhttp.Handler())
-	http.Handle("/", proxy)
+	if *enableMetrics {
+		prometheus.MustRegister(&metrics)
+		http.Handle("/metrics", promhttp.Handler())
+	}
 
+	http.Handle("/", proxy)
 	log.Println("listening on", listen)
 	log.Fatal(http.ListenAndServe(listen, nil))
 }

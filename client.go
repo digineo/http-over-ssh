@@ -109,10 +109,12 @@ func (client *client) connect() error {
 
 	sshClient, err := ssh.Dial("tcp", client.key.hostPort(), &client.sshConfig)
 	if err != nil {
+		metrics.connections.failed++
 		return err
 	}
 
 	client.sshClient = sshClient
+	metrics.connections.established++
 	return nil
 }
 
@@ -139,6 +141,12 @@ retry:
 		client.sshClient = nil
 		retried = true
 		goto retry
+	}
+
+	if err == nil {
+		metrics.forwardings.established++
+	} else {
+		metrics.forwardings.failed++
 	}
 
 	return conn, err
