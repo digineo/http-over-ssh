@@ -40,6 +40,14 @@ simply add to your scrape configs:
     metrics_path: /localhost:9100/metrics
 ```
 
+### Authorized Keys (OpenSSH)
+
+To restrict an SSH key to only forward connections to `localhost:9100`, append to the `~/.ssh/authorized_keys`:
+
+```
+restrict,port-forwarding,permitopen="localhost:9100" ssh-ed25519 <the-key> prometheus@example.com
+```
+
 
 ## Installation
 
