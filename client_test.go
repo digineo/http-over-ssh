@@ -1,85 +1,78 @@
 package main
 
 import (
-	"log"
+	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestParseJumpHost(t *testing.T) {
-	tt := map[string]struct {
-		expected clientKey
-		err      string // only the message
+func TestParseRequest(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []struct {
+		requestURI    string
+		authorization string
+		expectedKey   clientKey
+		expectedURI   string
+		expectedError string // only the message
 	}{
-		// simple error cases
-		"":         {err: "empty jump host"},
-		":":        {err: `strconv.Atoi: parsing "": invalid syntax`},
-		"[]":       {err: "empty jump host"},
-		"[":        {err: "empty jump host"},
-		"@":        {err: "empty jump host"},
-		"user@:22": {err: "empty jump host"},
-		"[fe80::1": {err: "address [fe80::1: missing ']' in address"},
-
-		// TODO: should these be an error?
-		"]":           {expected: clientKey{address: "]"}},
-		"fe80::1]":    {expected: clientKey{address: "fe80::1]"}},
-		"[xyz::1]:22": {expected: clientKey{address: "xyz::1", port: 22}},
-
-		// host as domain name
-		"example.com":         {expected: clientKey{address: "example.com"}},
-		"example.com:22":      {expected: clientKey{address: "example.com", port: 22}},
-		"user@example.com":    {expected: clientKey{address: "example.com", username: "user"}},
-		"user@example.com:22": {expected: clientKey{address: "example.com", username: "user", port: 22}},
-
-		// host as IPv4 address
-		"127.0.0.1":         {expected: clientKey{address: "127.0.0.1"}},
-		"127.0.0.1:22":      {expected: clientKey{address: "127.0.0.1", port: 22}},
-		"user@127.0.0.1":    {expected: clientKey{address: "127.0.0.1", username: "user"}},
-		"user@127.0.0.1:22": {expected: clientKey{address: "127.0.0.1", username: "user", port: 22}},
-
-		// host as IPv6 address
-		"::1":               {expected: clientKey{address: "::1"}},
-		"[::1]":             {expected: clientKey{address: "::1"}},
-		"[::1]:22":          {expected: clientKey{address: "::1", port: 22}},
-		"fe80::1":           {expected: clientKey{address: "fe80::1"}},
-		"fe80::1:22":        {expected: clientKey{address: "fe80::1:22"}}, // !
-		"[fe80::1]:22":      {expected: clientKey{address: "fe80::1", port: 22}},
-		"user@fe80::1":      {expected: clientKey{address: "fe80::1", username: "user"}},
-		"user@[fe80::1]":    {expected: clientKey{address: "fe80::1", username: "user"}},
-		"user@[fe80::1]:22": {expected: clientKey{address: "fe80::1", username: "user", port: 22}},
+		// URI without host
+		{
+			requestURI:    "/",
+			expectedError: "host missing in request URI",
+		},
+		// URI without destination host
+		{
+			requestURI:    "http://example.com/",
+			expectedError: "destination host missing in request URI",
+		},
+		// URI without slash after target host
+		{
+			requestURI:  "http://example.com/localhost",
+			expectedKey: clientKey{host: "example.com", port: 22},
+			expectedURI: "http://localhost",
+		},
+		// Hostname without port
+		{
+			requestURI:    "http://example.com/localhost/metrics?foo=bar",
+			authorization: "Basic cHJvbWV0aGV1czo=",
+			expectedKey:   clientKey{host: "example.com", port: 22, username: "prometheus"},
+			expectedURI:   "http://localhost/metrics?foo=bar",
+		},
+		// IPv4 address with port
+		{
+			requestURI:    "http://127.0.0.1:22/localhost:9100/",
+			authorization: "Basic dXNlcjpzZWNyZXQ=",
+			expectedKey:   clientKey{host: "127.0.0.1", port: 22, username: "user"},
+			expectedURI:   "http://localhost:9100/",
+		},
+		// IPv6 with port
+		{
+			requestURI:  "http://[fe80::1]:2222/[fe80::2]:9100/metrics",
+			expectedKey: clientKey{host: "fe80::1", port: 2222},
+			expectedURI: "http://[fe80::2]:9100/metrics",
+		},
 	}
 
-	for name, tc := range tt {
-		t.Run(name, func(t *testing.T) {
-			if name == "[xyz::1]:22" {
-				log.Println("start debugging")
-			}
+	for _, test := range tests {
+		r := http.Request{
+			RequestURI: test.requestURI,
+			Header:     http.Header{},
+		}
 
-			actual, err := parseJumpHost(name)
+		if test.authorization != "" {
+			r.Header.Add("Authorization", test.authorization)
+		}
 
-			// is either empty, and the other not?
-			if (tc.err == "") != (err == nil) {
-				if tc.err == "" {
-					t.Errorf("\n\texpected no error, got %v\n", err)
-				} else {
-					t.Errorf("\n\texpected error %s, got nil\n", tc.err)
-				}
-				return
-			}
+		key, uri, err := parseRequest(&r)
 
-			// is expected error same as actual error?
-			if tc.err != "" {
-				if tc.err != err.Error() {
-					t.Errorf("\n\texpected error %s, got %v\n", tc.err, err)
-				}
-				return
-			}
-
-			// compare parsed value
-			if tc.expected.address != actual.address ||
-				tc.expected.port != actual.port ||
-				tc.expected.username != actual.username {
-				t.Errorf("\n\texpected %#v\n\tgot %#v\n", tc.expected, actual)
-			}
-		})
+		if test.expectedError != "" {
+			assert.EqualError(err, test.expectedError)
+		} else {
+			assert.NoError(err)
+			assert.Equal(&test.expectedKey, key)
+			assert.Equal(test.expectedURI, uri)
+		}
 	}
 }

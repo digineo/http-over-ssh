@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -13,39 +17,15 @@ const defaultPort = 22
 func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	target, err := url.Parse(r.RequestURI)
+	key, uri, err := parseRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "error parsing URL:", err)
+		fmt.Fprintln(w, "invalid proxy request:", err)
 		return
-	}
-
-	if r.Host == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "hostname missing:", err)
-		return
-	}
-
-	// parts[0] = ignored, should be empty
-	// parts[1] = destination address
-	parts := strings.SplitN(target.Path, "/", 2)
-	if len(parts) != 2 {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	key, err := parseJumpHost(target.Host)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "error parsing jump host:", err)
-		return
-	}
-	if key.port == 0 {
-		key.port = defaultPort
 	}
 
 	// get client
-	client, err := proxy.getClient(key)
+	client, err := proxy.getClient(*key)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		fmt.Fprintln(w, err.Error())
@@ -53,7 +33,7 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// build a new request
-	req, err := http.NewRequest(r.Method, target.Scheme+"://"+parts[1], nil)
+	req, err := http.NewRequest(r.Method, uri, nil)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, "unable to build request:", err)
@@ -87,6 +67,49 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(res.StatusCode)
 	io.Copy(w, res.Body)
 	res.Body.Close()
+}
+
+func parseRequest(r *http.Request) (*clientKey, string, error) {
+	target, err := url.Parse(r.RequestURI)
+	if err != nil {
+		return nil, "", err
+	}
+
+	if target.Host == "" {
+		return nil, "", errors.New("host missing in request URI")
+	}
+
+	if target.Path == "/" {
+		return nil, "", errors.New("destination host missing in request URI")
+	}
+
+	key := clientKey{
+		host: target.Hostname(),
+	}
+
+	// Parse port
+	if port := target.Port(); port != "" {
+		ui, err := strconv.ParseUint(port, 10, 16)
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to parse port number: %v", err)
+		}
+		key.port = uint16(ui)
+	} else {
+		key.port = defaultPort
+	}
+
+	// Parse username
+	if auth := r.Header.Get("Authorization"); strings.HasPrefix(auth, "Basic ") {
+		decoded, _ := base64.StdEncoding.DecodeString(auth[6:])
+		if i := bytes.IndexByte(decoded, ':'); i != -1 {
+			key.username = string(decoded[:i])
+		} else {
+			key.username = string(decoded)
+		}
+
+	}
+
+	return &key, target.Scheme + ":/" + target.RequestURI(), nil
 }
 
 // Hop-by-hop headers. These are removed when sent to the backend.

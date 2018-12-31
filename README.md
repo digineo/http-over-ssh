@@ -9,8 +9,11 @@ the requirement of polling [Prometheus exporters][promexp] through SSH.
 
 ## Syntax
 
-    GET http://<jumphost>/<destination-host>/<destination-path>
+A proxy request looks like this:
 
+    GET http://<jumphost>/<destination-host>/<destination-path> HTTP/1.1
+
+You can override the SSH username by using HTTP Basic Auth.
 
 ## Usage
 
