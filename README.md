@@ -32,12 +32,17 @@ simply add to your scrape configs:
 
 ```yaml
   - job_name: 'node-exporter'
+    proxy_url: http://localhost:8080/
+    metrics_path: /localhost:9100/metrics
+    relabel_configs:
+      - source_labels: ['__address__', '__metrics_path__']
+        regex:        '(.+):\d+;/localhost:(\d+)/.*'
+        replacement:  '$1:$2'
+        target_label: 'instance'
     static_configs:
       - targets:
         - www.example.com:22
         - mail.example.com:22
-    proxy_url: http://localhost:8080/
-    metrics_path: /localhost:9100/metrics
 ```
 
 ### Authorized Keys (OpenSSH)
