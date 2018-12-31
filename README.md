@@ -5,8 +5,6 @@ This dynamic HTTP proxy tunnels your HTTP requests through SSH connections
 using public key authentication. The intention to develop this program is
 the requirement of polling [Prometheus exporters][promexp] through SSH.
 
-> **It is not recommended for production use, yet.**
-
 [promexp]: https://prometheus.io/docs/instrumenting/exporters/
 
 ## Syntax
@@ -71,7 +69,6 @@ Alternatively, you may download a pre-built binary from the Github
 
 ## Next steps
 
-- [ ] stability improvements
 - [ ] clean up idle ssh connections
 - [ ] support for unix sockets
 

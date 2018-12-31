@@ -133,9 +133,9 @@ retry:
 	}
 
 	log.Printf("forwarding via %s to %s", client.key.String(), address)
-
 	conn, err := client.sshClient.Dial(network, address)
-	if err == io.EOF && !retried {
+
+	if err != nil && !retried && (err == io.EOF || !client.isAlive()) {
 		// ssh connection broken
 		client.sshClient.Close()
 		client.sshClient = nil
@@ -150,4 +150,10 @@ retry:
 	}
 
 	return conn, err
+}
+
+// checks if the SSH client is still alive by sending a keep alive request.
+func (client *client) isAlive() bool {
+	_, _, err := client.sshClient.Conn.SendRequest("keepalive@openssh.com", true, nil)
+	return err == nil
 }
