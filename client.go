@@ -20,6 +20,7 @@ type client struct {
 	mtx        sync.Mutex
 }
 
+// clientKey is used for reusing SSH connections
 type clientKey struct {
 	host     string
 	port     uint16
@@ -41,16 +42,18 @@ func (key *clientKey) String() string {
 
 // establishes the SSH connection and sets up the HTTP client
 func (client *client) connect() error {
-	log.Printf("establishing SSH connection to %s", client.key.String())
 
 	sshClient, err := ssh.Dial("tcp", client.key.hostPort(), &client.sshConfig)
 	if err != nil {
 		metrics.connections.failed++
+		log.Printf("SSH connection to %v failed: %v", client.key.String(), err)
 		return err
 	}
 
 	client.sshClient = sshClient
 	metrics.connections.established++
+	log.Printf("SSH connection to %v established", client.key.String())
+
 	return nil
 }
 
@@ -68,7 +71,6 @@ retry:
 		}
 	}
 
-	log.Printf("forwarding via %s to %s", client.key.String(), address)
 	conn, err := client.sshClient.Dial(network, address)
 
 	if err != nil && !retried && (err == io.EOF || !client.isAlive()) {
@@ -81,8 +83,10 @@ retry:
 
 	if err == nil {
 		metrics.forwardings.established++
+		log.Printf("TCP forwarding via %v to %s established", client.key.String(), address)
 	} else {
 		metrics.forwardings.failed++
+		log.Printf("TCP forwarding via %v to %s failed: %s", client.key.String(), address, err)
 	}
 
 	return conn, err
