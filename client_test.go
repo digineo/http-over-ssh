@@ -27,13 +27,19 @@ func TestParseRequest(t *testing.T) {
 			requestURI:    "http://example.com/",
 			expectedError: "destination host missing in request URI",
 		},
+		// Invalid port number
+		{
+			requestURI:    "http://example.com:99999/localhost",
+			expectedError: "parsing \"99999\": invalid port number",
+		},
 		// URI without slash after target host
 		{
-			requestURI:  "http://example.com/localhost",
-			expectedKey: clientKey{host: "example.com", port: 22},
-			expectedURI: "http://localhost",
+			requestURI:    "http://example.com/localhost",
+			authorization: "Basic dGVzdA==",
+			expectedKey:   clientKey{host: "example.com", port: 22, username: "test"},
+			expectedURI:   "http://localhost",
 		},
-		// Hostname without port
+		// Hostname without port and credentials
 		{
 			requestURI:    "http://example.com/localhost/metrics?foo=bar",
 			authorization: "Basic cHJvbWV0aGV1czo=",

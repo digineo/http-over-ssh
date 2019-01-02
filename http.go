@@ -67,7 +67,7 @@ func parseRequest(r *http.Request) (*clientKey, string, error) {
 	if port := target.Port(); port != "" {
 		ui, err := strconv.ParseUint(port, 10, 16)
 		if err != nil {
-			return nil, "", fmt.Errorf("unable to parse port number: %v", err)
+			return nil, "", fmt.Errorf("parsing \"%v\": invalid port number", port)
 		}
 		key.port = uint16(ui)
 	} else {
