@@ -1,0 +1,37 @@
+# Golang CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-go/ for more details
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.11
+    steps:
+      - checkout
+
+      # run tests and report coverage
+      - run: go test -v -cover -race -coverprofile=coverage.txt ./...
+      - run: bash <(curl -s https://codecov.io/bash)
+
+      # build binary
+      - run: go install github.com/digineo/http-over-ssh
+
+  checks:
+    docker:
+      - image: circleci/golang:1.11
+    steps:
+      - checkout
+
+      # check goftm
+      - run: .circleci/check-gofmt
+
+      # check misspell
+      - run: go get github.com/client9/misspell/cmd/misspell
+      - run: misspell -error .
+
+workflows:
+  version: 2
+  workflow:
+    jobs:
+    - checks
+    - build
