@@ -24,14 +24,6 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get client
-	client, err := proxy.getClient(*key)
-	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
-		fmt.Fprintln(w, err.Error())
-		return
-	}
-
 	// build a new request
 	req, err := http.NewRequest(r.Method, uri, nil)
 	if err != nil {
@@ -55,6 +47,7 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// do the request
+	client := proxy.getClient(*key)
 	res, err := client.httpClient.Do(req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)

@@ -24,14 +24,14 @@ func NewProxy() *Proxy {
 }
 
 // getClient returns a (un)connected SSH client
-func (proxy *Proxy) getClient(key clientKey) (*client, error) {
+func (proxy *Proxy) getClient(key clientKey) *client {
 	proxy.mtx.Lock()
 	defer proxy.mtx.Unlock()
 
 	// connection established?
 	pClient, _ := proxy.clients[key]
 	if pClient != nil {
-		return pClient, nil
+		return pClient
 	}
 
 	pClient = &client{
@@ -52,5 +52,5 @@ func (proxy *Proxy) getClient(key clientKey) (*client, error) {
 
 	// set and return the new connection
 	proxy.clients[key] = pClient
-	return pClient, nil
+	return pClient
 }
