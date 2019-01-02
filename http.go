@@ -24,31 +24,14 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// build a new request
-	req, err := http.NewRequest(r.Method, uri, nil)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "unable to build request:", err)
-		return
-	}
-
-	// set header and body
-	req.Header = cloneHeader(r.Header)
-	removeConnectionHeaders(req.Header)
-	req.Body = r.Body
-
-	// Remove hop-by-hop headers to the backend. Especially
-	// important is "Connection" because we want a persistent
-	// connection, regardless of what the client sent to us.
-	for _, h := range hopHeaders {
-		if req.Header.Get(h) != "" {
-			req.Header.Del(h)
-		}
-	}
+	r.Close = false
+	r.URL, _ = url.Parse(uri)
+	r.RequestURI = ""
+	removeHopHeaders(r.Header)
 
 	// do the request
 	client := proxy.getClient(*key)
-	res, err := client.httpClient.Do(req)
+	res, err := client.httpClient.Do(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		fmt.Fprintln(w, err.Error())
@@ -127,24 +110,11 @@ func copyHeader(dst, src http.Header) {
 	}
 }
 
-func cloneHeader(h http.Header) http.Header {
-	h2 := make(http.Header, len(h))
-	for k, vv := range h {
-		vv2 := make([]string, len(vv))
-		copy(vv2, vv)
-		h2[k] = vv2
-	}
-	return h2
-}
-
-// removeConnectionHeaders removes hop-by-hop headers listed in the "Connection" header of h.
-// See RFC 2616, section 14.10.
-func removeConnectionHeaders(h http.Header) {
-	if c := h.Get("Connection"); c != "" {
-		for _, f := range strings.Split(c, ",") {
-			if f = strings.TrimSpace(f); f != "" {
-				h.Del(f)
-			}
-		}
+// removeHopHeaders removes hop-by-hop headers to the backend. Especially
+// important is "Connection" because we want a persistent
+// connection, regardless of what the client sent to us.
+func removeHopHeaders(header http.Header) {
+	for _, h := range hopHeaders {
+		header.Del(h)
 	}
 }
