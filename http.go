@@ -20,7 +20,7 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	key, uri, err := parseRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "invalid proxy request:", err)
+		fmt.Fprintln(w, err)
 		return
 	}
 

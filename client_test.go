@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -81,4 +84,72 @@ func TestParseRequest(t *testing.T) {
 			assert.Equal(test.expectedURI, uri)
 		}
 	}
+}
+func TestClientKeyToString(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []struct {
+		input    clientKey
+		expected string
+	}{
+		{
+			input:    clientKey{host: "example.com", port: 22},
+			expected: "example.com:22",
+		},
+		{
+			input:    clientKey{host: "example.com", port: 22, username: "prometheus"},
+			expected: "prometheus@example.com:22",
+		},
+	}
+
+	for _, test := range tests {
+		assert.Equal(test.expected, test.input.String())
+	}
+}
+
+func TestGetClient(t *testing.T) {
+	assert := assert.New(t)
+
+	proxy := NewProxy()
+	proxy.sshConfig.User = "default"
+
+	// default username
+	{
+		client := proxy.getClient(clientKey{host: "::1"})
+		assert.Equal("default", client.sshConfig.User)
+	}
+
+	// override username
+	{
+		client := proxy.getClient(clientKey{host: "::1", username: "prometheus"})
+		assert.Equal("prometheus", client.sshConfig.User)
+	}
+}
+
+func TestClientDialHTTPS(t *testing.T) {
+	assert := assert.New(t)
+
+	proxy := NewProxy()
+	client := proxy.getClient(clientKey{host: "::1"})
+
+	_, err := client.httpClient.Get("https://example.com/")
+	assert.EqualError(err, "Get https://example.com/: not implemented")
+}
+func TestInvalidRequestURI(t *testing.T) {
+	assert := assert.New(t)
+
+	w := httptest.NewRecorder()
+	r := &http.Request{
+		RequestURI: "%zz",
+		Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+	}
+
+	NewProxy().ServeHTTP(w, r)
+
+	res := w.Result()
+	body, err := ioutil.ReadAll(res.Body)
+
+	assert.NoError(err)
+	assert.Equal(400, res.StatusCode)
+	assert.Equal("parse %zz: invalid URL escape \"%zz\"\n", string(body))
 }
