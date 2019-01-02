@@ -41,9 +41,9 @@ func TestHTTP(t *testing.T) {
 	prometheus.MustRegister(&metrics)
 	defer prometheus.Unregister(&metrics)
 
-	sshPort := "127.0.0.1:2200"
-	httpPort := "127.0.0.1:9100"
-	proxyPort := "127.0.0.1:8080"
+	sshPort := "127.0.0.1:10022"
+	httpPort := "127.0.0.1:10080"
+	proxyPort := "127.0.0.1:10081"
 
 	config := &ssh.ServerConfig{
 		PublicKeyCallback: func(c ssh.ConnMetadata, pubKey ssh.PublicKey) (*ssh.Permissions, error) {
