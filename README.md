@@ -57,6 +57,9 @@ To restrict an SSH key to only forward connections to `localhost:9100`, append t
 restrict,port-forwarding,permitopen="localhost:9100" ssh-ed25519 <the-key> prometheus@example.com
 ```
 
+### Metrics
+
+Prometheus metrics can be retrieved via `/metrics`.
 
 ## Installation
 

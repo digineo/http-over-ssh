@@ -33,9 +33,10 @@ var sshKeys = []string{
 
 // command line flags
 var (
-	listen     = or(os.Getenv("HOS_LISTEN"), "[::1]:8080")
-	sshUser    = or(os.Getenv("HOS_USER"), "root")
-	sshTimeout = func() time.Duration {
+	listen        = or(os.Getenv("HOS_LISTEN"), "[::1]:8080")
+	enableMetrics = os.Getenv("HOS_METRICS") != "0"
+	sshUser       = or(os.Getenv("HOS_USER"), "root")
+	sshTimeout    = func() time.Duration {
 		dur := os.Getenv("HOS_TIMEOUT")
 		if dur != "" {
 			if d, err := time.ParseDuration(dur); err != nil {
@@ -56,7 +57,7 @@ var (
 func main() {
 	fmt.Printf("%s %v, commit %v, built at %v\n", os.Args[0], version, commit, date)
 
-	enableMetrics := flag.Bool("metrics", true, "enable metrics")
+	flag.BoolVar(&enableMetrics, "metrics", enableMetrics, "enable metrics")
 	flag.StringVar(&listen, "listen", listen, "listen on")
 	flag.StringVar(&sshUser, "user", sshUser, "default SSH username")
 	flag.DurationVar(&sshTimeout, "timeout", sshTimeout, "SSH connection timeout")
@@ -80,7 +81,7 @@ func main() {
 		},
 	}
 
-	if *enableMetrics {
+	if enableMetrics {
 		prometheus.MustRegister(&metrics)
 		http.Handle("/metrics", promhttp.Handler())
 	}
