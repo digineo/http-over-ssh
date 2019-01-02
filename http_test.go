@@ -27,6 +27,8 @@ type directTCPPayload struct {
 	OriginPort uint32
 }
 
+var httpServer *http.Server
+
 func TestHTTP(t *testing.T) {
 	log.SetFlags(log.Llongfile)
 
@@ -89,18 +91,16 @@ func TestHTTP(t *testing.T) {
 	client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
 
 	// valid request via valid jumphost
-	{
-		response, err := client.Get(fmt.Sprintf("http://%s/%s/test", sshPort, httpPort))
-		assert.NoError(err)
-		if response != nil {
-			assert.EqualValues(1, metrics.connections.established)
-			assert.EqualValues(1, metrics.forwardings.established)
-			assert.EqualValues(0, metrics.forwardings.failed)
-			assert.Equal(200, response.StatusCode)
+	response, err := client.Get(fmt.Sprintf("http://%s/%s/test", sshPort, httpPort))
+	assert.NoError(err)
+	if response != nil {
+		assert.EqualValues(1, metrics.connections.established)
+		assert.EqualValues(1, metrics.forwardings.established)
+		assert.EqualValues(0, metrics.forwardings.failed)
+		assert.Equal(200, response.StatusCode)
 
-			bytes, _ := ioutil.ReadAll(response.Body)
-			assert.Equal("Hello World", string(bytes))
-		}
+		bytes, _ := ioutil.ReadAll(response.Body)
+		assert.Equal("Hello World", string(bytes))
 	}
 
 	// valid HTTPS request via valid jumphost
@@ -145,6 +145,27 @@ func TestHTTP(t *testing.T) {
 			assert.Contains(string(bytes), "sshproxy_connections_established 1")
 		}
 	}
+
+	// Close HTTP server and SSH connections, SSH connection should be re-established,
+	// forwarding should fail
+	{
+		// Just closing the httpListener has no effect with Go 1.11
+		// So we need to do more work
+		httpServer.Close()
+		for _, client := range proxy.clients {
+			if client := client.sshClient; client != nil {
+				client.Close()
+			}
+		}
+
+		response, err := client.Get(fmt.Sprintf("http://%s/%s/test", sshPort, httpPort))
+		assert.NoError(err)
+		assert.Equal(http.StatusBadGateway, response.StatusCode)
+		assert.EqualValues(2, metrics.connections.established)
+		assert.EqualValues(1, metrics.connections.failed)
+		assert.EqualValues(1, metrics.forwardings.established)
+		assert.EqualValues(2, metrics.forwardings.failed)
+	}
 }
 
 func serveHTTP(listener net.Listener) {
@@ -153,10 +174,11 @@ func serveHTTP(listener net.Listener) {
 		fmt.Fprint(w, "Hello World")
 	})
 
-	server := http.Server{
+	httpServer = &http.Server{
 		Handler: &mux,
 	}
-	server.Serve(listener)
+	httpServer.Serve(listener)
+
 }
 
 func serveProxy(listener net.Listener, proxy *Proxy) {
