@@ -1,7 +1,7 @@
 HTTP over SSH
 =============
 
-[![CircleCI](https://circleci.com/gh/digineo/http-over-ssh.svg?style=svg)](https://circleci.com/gh/digineo/http-over-ssh)
+[![CircleCI](https://circleci.com/gh/digineo/http-over-ssh.svg?style=shield)](https://circleci.com/gh/digineo/http-over-ssh)
 [![Codecov](http://codecov.io/github/digineo/http-over-ssh/coverage.svg?branch=master)](http://codecov.io/github/digineo/http-over-ssh?branch=master)
 
 This dynamic HTTP proxy tunnels your HTTP requests through SSH connections
