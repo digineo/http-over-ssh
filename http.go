@@ -25,6 +25,7 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.Close = false
+	r.Host = ""
 	r.URL, _ = url.Parse(uri)
 	r.RequestURI = ""
 	removeHopHeaders(r.Header)

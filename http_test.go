@@ -27,7 +27,10 @@ type directTCPPayload struct {
 	OriginPort uint32
 }
 
-var httpServer *http.Server
+var (
+	httpServer  *http.Server
+	lastRequest *http.Request // the last received request
+)
 
 func TestHTTP(t *testing.T) {
 	log.SetFlags(log.Llongfile)
@@ -94,6 +97,7 @@ func TestHTTP(t *testing.T) {
 	response, err := client.Get(fmt.Sprintf("http://%s/%s/test", sshPort, httpPort))
 	assert.NoError(err)
 	if response != nil {
+		assert.Equal(httpPort, lastRequest.Host)
 		assert.EqualValues(1, metrics.connections.established)
 		assert.EqualValues(1, metrics.forwardings.established)
 		assert.EqualValues(0, metrics.forwardings.failed)
@@ -171,6 +175,7 @@ func TestHTTP(t *testing.T) {
 func serveHTTP(listener net.Listener) {
 	mux := http.ServeMux{}
 	mux.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		lastRequest = r
 		fmt.Fprint(w, "Hello World")
 	})
 
