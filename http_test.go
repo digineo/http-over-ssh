@@ -146,7 +146,7 @@ func TestHTTP(t *testing.T) {
 		if response != nil {
 			assert.Equal(200, response.StatusCode)
 			bytes, _ := ioutil.ReadAll(response.Body)
-			assert.Contains(string(bytes), "sshproxy_connections_established 1")
+			assert.Contains(string(bytes), `sshproxy_connections_total{state="established"} 1`)
 		}
 	}
 

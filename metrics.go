@@ -15,24 +15,21 @@ type prometheusExporter struct {
 var (
 	metrics = prometheusExporter{}
 
-	sshConnEstablishedDesc    = prometheus.NewDesc("sshproxy_connections_established", "Established SSH connections", nil, nil)
-	sshConnFailedDesc         = prometheus.NewDesc("sshproxy_connections_failed", "Failed SSH connections", nil, nil)
-	sshForwardEstablishedDesc = prometheus.NewDesc("sshproxy_forwardings_established", "Established SSH forwardings", nil, nil)
-	sshForwardFailedDesc      = prometheus.NewDesc("sshproxy_forwardings_failed", "Failed SSH forwardings", nil, nil)
+	variableLabels     = []string{"state"}
+	sshConnectionsDesc = prometheus.NewDesc("sshproxy_connections_total", "SSH connections", variableLabels, nil)
+	sshForwardingsDesc = prometheus.NewDesc("sshproxy_forwardings_total", "TCP forwardings", variableLabels, nil)
 )
 
 // Describe implements (part of the) prometheus.Collector interface.
 func (e *prometheusExporter) Describe(c chan<- *prometheus.Desc) {
-	c <- sshConnEstablishedDesc
-	c <- sshConnFailedDesc
-	c <- sshForwardEstablishedDesc
-	c <- sshForwardFailedDesc
+	c <- sshConnectionsDesc
+	c <- sshForwardingsDesc
 }
 
 // Collect implements (part of the) prometheus.Collector interface.
 func (e prometheusExporter) Collect(c chan<- prometheus.Metric) {
-	c <- prometheus.MustNewConstMetric(sshConnEstablishedDesc, prometheus.CounterValue, float64(e.connections.established))
-	c <- prometheus.MustNewConstMetric(sshConnFailedDesc, prometheus.CounterValue, float64(e.connections.failed))
-	c <- prometheus.MustNewConstMetric(sshForwardEstablishedDesc, prometheus.CounterValue, float64(e.forwardings.established))
-	c <- prometheus.MustNewConstMetric(sshForwardFailedDesc, prometheus.CounterValue, float64(e.forwardings.failed))
+	c <- prometheus.MustNewConstMetric(sshConnectionsDesc, prometheus.CounterValue, float64(e.connections.established), "established")
+	c <- prometheus.MustNewConstMetric(sshConnectionsDesc, prometheus.CounterValue, float64(e.connections.failed), "failed")
+	c <- prometheus.MustNewConstMetric(sshForwardingsDesc, prometheus.CounterValue, float64(e.forwardings.established), "established")
+	c <- prometheus.MustNewConstMetric(sshForwardingsDesc, prometheus.CounterValue, float64(e.forwardings.failed), "failed")
 }
