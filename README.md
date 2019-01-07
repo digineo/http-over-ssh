@@ -80,8 +80,6 @@ Alternatively, you may download a pre-built binary from the Github
 
 ## Next steps
 
-- [ ] verify SSH host keys
-- [ ] add support for SSH certificates
 - [ ] clean up idle ssh connections
 - [ ] support for unix sockets
 

@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"os/user"
@@ -14,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 )
 
 var home = func() string {
@@ -26,10 +26,13 @@ var home = func() string {
 
 var sshKeyDir = or(os.Getenv("HOS_KEY_DIR"), filepath.Join(home, ".ssh"))
 
-var sshKeys = []string{
-	filepath.Join(sshKeyDir, "id_rsa"),
-	filepath.Join(sshKeyDir, "id_ed25519"),
-}
+var (
+	sshKeys = []string{
+		filepath.Join(sshKeyDir, "id_rsa"),
+		filepath.Join(sshKeyDir, "id_ed25519"),
+	}
+	knownHosts = filepath.Join(sshKeyDir, "known_hosts")
+)
 
 // command line flags
 var (
@@ -70,15 +73,17 @@ func main() {
 		log.Fatal("no SSH keys found")
 	}
 
+	hostKeyCallback, err := knownhosts.New(knownHosts)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	proxy := NewProxy()
 	proxy.sshConfig = ssh.ClientConfig{
-		Timeout: sshTimeout,
-		User:    sshUser,
-		Auth:    authMethods,
-		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			// TODO implement this
-			return nil
-		},
+		Timeout:         sshTimeout,
+		User:            sshUser,
+		Auth:            authMethods,
+		HostKeyCallback: hostKeyCallback,
 	}
 
 	if enableMetrics {
