@@ -132,8 +132,12 @@ func TestClientDialHTTPS(t *testing.T) {
 	proxy := NewProxy()
 	client := proxy.getClient(clientKey{host: "::1"})
 
-	_, err := client.httpClient.Get("https://example.com/")
+	response, err := client.httpClient.Get("https://example.com/")
 	assert.EqualError(err, "Get https://example.com/: not implemented")
+
+	if response != nil {
+		response.Body.Close()
+	}
 }
 func TestInvalidRequestURI(t *testing.T) {
 	assert := assert.New(t)

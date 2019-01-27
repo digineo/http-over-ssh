@@ -105,12 +105,16 @@ func TestHTTP(t *testing.T) {
 
 		bytes, _ := ioutil.ReadAll(response.Body)
 		assert.Equal("Hello World", string(bytes))
+		response.Body.Close()
 	}
 
 	// valid HTTPS request via valid jumphost
 	{
-		_, err := client.Get(fmt.Sprintf("https://%s/%s/test", sshPort, httpPort))
+		response, err := client.Get(fmt.Sprintf("https://%s/%s/test", sshPort, httpPort))
 		assert.Error(err)
+		if response != nil {
+			response.Body.Close()
+		}
 	}
 
 	// invalid request via valid jumphost
@@ -123,6 +127,7 @@ func TestHTTP(t *testing.T) {
 			assert.EqualValues(1, metrics.forwardings.established)
 			assert.EqualValues(1, metrics.forwardings.failed)
 			assert.Equal(http.StatusBadGateway, response.StatusCode)
+			response.Body.Close()
 		}
 	}
 
@@ -136,6 +141,7 @@ func TestHTTP(t *testing.T) {
 			assert.EqualValues(1, metrics.connections.failed)
 			assert.EqualValues(1, metrics.forwardings.established)
 			assert.EqualValues(1, metrics.forwardings.failed)
+			response.Body.Close()
 		}
 	}
 
@@ -147,6 +153,7 @@ func TestHTTP(t *testing.T) {
 			assert.Equal(200, response.StatusCode)
 			bytes, _ := ioutil.ReadAll(response.Body)
 			assert.Contains(string(bytes), `sshproxy_connections_total{state="established"} 1`)
+			response.Body.Close()
 		}
 	}
 
@@ -169,6 +176,7 @@ func TestHTTP(t *testing.T) {
 		assert.EqualValues(1, metrics.connections.failed)
 		assert.EqualValues(1, metrics.forwardings.established)
 		assert.EqualValues(2, metrics.forwardings.failed)
+		response.Body.Close()
 	}
 }
 
