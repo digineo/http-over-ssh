@@ -77,6 +77,10 @@ retry:
 		// ssh connection broken
 		client.sshClient.Close()
 		client.sshClient = nil
+
+		// Clean up idle HTTP connections
+		client.httpClient.Transport.(*http.Transport).CloseIdleConnections()
+
 		retried = true
 		goto retry
 	}
