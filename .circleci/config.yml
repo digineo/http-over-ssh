@@ -27,7 +27,7 @@ jobs:
 
       # check misspell
       - run: go get github.com/client9/misspell/cmd/misspell
-      - run: misspell -error .
+      - run: misspell -error *.go *.md
 
 workflows:
   version: 2
