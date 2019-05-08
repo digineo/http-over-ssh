@@ -32,6 +32,7 @@ var (
 		filepath.Join(sshKeyDir, "id_ed25519"),
 	}
 	knownHosts = filepath.Join(sshKeyDir, "known_hosts")
+	proxy      *Proxy
 )
 
 // command line flags
@@ -78,7 +79,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	proxy := NewProxy()
+	proxy = NewProxy()
 	proxy.sshConfig = ssh.ClientConfig{
 		Timeout:         sshTimeout,
 		User:            sshUser,

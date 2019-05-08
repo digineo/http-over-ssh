@@ -75,7 +75,7 @@ func TestHTTP(t *testing.T) {
 
 	authMethods := readPrivateKeys("fixtures/id_ed25519")
 
-	proxy := NewProxy()
+	proxy = NewProxy()
 	proxy.sshConfig = ssh.ClientConfig{
 		Timeout: time.Second,
 		User:    "prometheus",
