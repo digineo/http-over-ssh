@@ -38,6 +38,16 @@ func (proxy *Proxy) getClient(key clientKey) *client {
 		key:       key,
 		sshConfig: proxy.sshConfig, // make copy
 	}
+	pClient.sshConfig.HostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		if err := proxy.sshConfig.HostKeyCallback(hostname, remote, key); err != nil {
+			return err
+		}
+		if cert, ok := key.(*ssh.Certificate); ok && cert != nil {
+			pClient.sshCert = cert
+		}
+		return nil
+	}
+
 	if key.username != "" {
 		pClient.sshConfig.User = key.username
 	}

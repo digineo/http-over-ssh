@@ -24,10 +24,9 @@ var home = func() string {
 	return os.Getenv("HOME")
 }()
 
-var sshKeyDir = or(os.Getenv("HOS_KEY_DIR"), filepath.Join(home, ".ssh"))
-
 var (
-	sshKeys = []string{
+	sshKeyDir = envStr("HOS_KEY_DIR", filepath.Join(home, ".ssh"))
+	sshKeys   = []string{
 		filepath.Join(sshKeyDir, "id_rsa"),
 		filepath.Join(sshKeyDir, "id_ed25519"),
 	}
@@ -37,18 +36,10 @@ var (
 
 // command line flags
 var (
-	listen        = or(os.Getenv("HOS_LISTEN"), "[::1]:8080")
-	enableMetrics = os.Getenv("HOS_METRICS") != "0"
-	sshUser       = or(os.Getenv("HOS_USER"), "root")
-	sshTimeout    = func() time.Duration {
-		dur := os.Getenv("HOS_TIMEOUT")
-		if dur != "" {
-			if d, err := time.ParseDuration(dur); err != nil {
-				return d
-			}
-		}
-		return 10 * time.Second
-	}()
+	listen        = envStr("HOS_LISTEN", "[::1]:8080")
+	enableMetrics = envStr("HOS_METRICS", "1") != "0"
+	sshUser       = envStr("HOS_USER", "root")
+	sshTimeout    = envDur("HOS_TIMEOUT", 10*time.Second)
 )
 
 // build flags
@@ -97,9 +88,16 @@ func main() {
 	log.Fatal(http.ListenAndServe(listen, nil))
 }
 
-func or(s, alt string) string {
-	if s != "" {
+func envStr(name, fallback string) string {
+	if s := os.Getenv(name); s != "" {
 		return s
 	}
-	return alt
+	return fallback
+}
+
+func envDur(name string, fallback time.Duration) time.Duration {
+	if dur, err := time.ParseDuration(os.Getenv(name)); err == nil {
+		return dur
+	}
+	return fallback
 }

@@ -139,6 +139,7 @@ func TestClientDialHTTPS(t *testing.T) {
 		response.Body.Close()
 	}
 }
+
 func TestInvalidRequestURI(t *testing.T) {
 	assert := assert.New(t)
 

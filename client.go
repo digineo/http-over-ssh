@@ -14,6 +14,7 @@ import (
 
 type client struct {
 	key        clientKey
+	sshCert    *ssh.Certificate
 	sshConfig  ssh.ClientConfig
 	sshClient  *ssh.Client
 	httpClient *http.Client
@@ -42,17 +43,16 @@ func (key *clientKey) String() string {
 
 // establishes the SSH connection and sets up the HTTP client
 func (client *client) connect() error {
-
 	sshClient, err := ssh.Dial("tcp", client.key.hostPort(), &client.sshConfig)
 	if err != nil {
 		metrics.connections.failed++
-		log.Printf("SSH connection to %v failed: %v", client.key.String(), err)
+		log.Printf("SSH connection to %s failed: %v", client.key.String(), err)
 		return err
 	}
 
 	client.sshClient = sshClient
 	metrics.connections.established++
-	log.Printf("SSH connection to %v established", client.key.String())
+	log.Printf("SSH connection to %s established", client.key.String())
 
 	return nil
 }
@@ -87,10 +87,10 @@ retry:
 
 	if err == nil {
 		metrics.forwardings.established++
-		log.Printf("TCP forwarding via %v to %s established", client.key.String(), address)
+		log.Printf("TCP forwarding via %s to %s established", client.key.String(), address)
 	} else {
 		metrics.forwardings.failed++
-		log.Printf("TCP forwarding via %v to %s failed: %s", client.key.String(), address, err)
+		log.Printf("TCP forwarding via %s to %s failed: %s", client.key.String(), address, err)
 	}
 
 	return conn, err
