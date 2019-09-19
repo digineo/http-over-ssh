@@ -3,9 +3,9 @@
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
 jobs:
-  build:
+  build-1.13: &build-defaults
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.13
     steps:
       - checkout
 
@@ -16,22 +16,26 @@ jobs:
       # build binary
       - run: go install github.com/digineo/http-over-ssh
 
-  checks:
+  build-1.12:
+    <<: *build-defaults
     docker:
       - image: circleci/golang:1.12
+
+  lint:
+    docker:
+      - image: circleci/golang:1.13
+    environment:
+      GOLANGCI_LINT_VERSION: v1.18.0
     steps:
       - checkout
 
-      # check goftm
-      - run: .circleci/check-gofmt
-
-      # check misspell
-      - run: go get github.com/client9/misspell/cmd/misspell
-      - run: misspell -error *.go *.md
+      - run: curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s "$GOLANGCI_LINT_VERSION"
+      - run: ./bin/golangci-lint run
 
 workflows:
   version: 2
   workflow:
     jobs:
-    - checks
-    - build
+    - lint
+    - build-1.13
+    - build-1.12

@@ -29,10 +29,11 @@ func (e *prometheusExporter) Describe(c chan<- *prometheus.Desc) {
 
 // Collect implements (part of the) prometheus.Collector interface.
 func (e prometheusExporter) Collect(c chan<- prometheus.Metric) {
-	c <- prometheus.MustNewConstMetric(sshConnectionsDesc, prometheus.CounterValue, float64(e.connections.established), "established")
-	c <- prometheus.MustNewConstMetric(sshConnectionsDesc, prometheus.CounterValue, float64(e.connections.failed), "failed")
-	c <- prometheus.MustNewConstMetric(sshForwardingsDesc, prometheus.CounterValue, float64(e.forwardings.established), "established")
-	c <- prometheus.MustNewConstMetric(sshForwardingsDesc, prometheus.CounterValue, float64(e.forwardings.failed), "failed")
+	const C = prometheus.CounterValue
+	c <- prometheus.MustNewConstMetric(sshConnectionsDesc, C, float64(e.connections.established), "established")
+	c <- prometheus.MustNewConstMetric(sshConnectionsDesc, C, float64(e.connections.failed), "failed")
+	c <- prometheus.MustNewConstMetric(sshForwardingsDesc, C, float64(e.forwardings.established), "established")
+	c <- prometheus.MustNewConstMetric(sshForwardingsDesc, C, float64(e.forwardings.failed), "failed")
 
 	proxy.mtx.Lock()
 	for key, client := range proxy.clients {

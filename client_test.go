@@ -152,6 +152,7 @@ func TestInvalidRequestURI(t *testing.T) {
 
 	res := w.Result()
 	body, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
 
 	assert.NoError(err)
 	assert.Equal(400, res.StatusCode)

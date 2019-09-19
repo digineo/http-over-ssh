@@ -29,7 +29,7 @@ func (proxy *Proxy) getClient(key clientKey) *client {
 	defer proxy.mtx.Unlock()
 
 	// connection established?
-	pClient, _ := proxy.clients[key]
+	pClient := proxy.clients[key]
 	if pClient != nil {
 		return pClient
 	}

@@ -42,7 +42,7 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// copy response header and body
 	copyHeader(w.Header(), res.Header)
 	w.WriteHeader(res.StatusCode)
-	io.Copy(w, res.Body)
+	_, _ = io.Copy(w, res.Body)
 	res.Body.Close()
 }
 
