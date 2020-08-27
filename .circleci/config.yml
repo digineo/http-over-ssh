@@ -3,9 +3,9 @@
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
 jobs:
-  build-1.13: &build-defaults
+  build-1.15: &build-defaults
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.15
     steps:
       - checkout
 
@@ -16,14 +16,14 @@ jobs:
       # build binary
       - run: go install github.com/digineo/http-over-ssh
 
-  build-1.12:
+  build-1.14:
     <<: *build-defaults
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.14
 
   lint:
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.15
     environment:
       GOLANGCI_LINT_VERSION: v1.18.0
     steps:
@@ -37,5 +37,5 @@ workflows:
   workflow:
     jobs:
     - lint
-    - build-1.13
-    - build-1.12
+    - build-1.15
+    - build-1.14
