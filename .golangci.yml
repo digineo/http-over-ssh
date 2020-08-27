@@ -11,3 +11,4 @@ issues:
     - interfacer
     - maligned
     - funlen
+    - scopelint

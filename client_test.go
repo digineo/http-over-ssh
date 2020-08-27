@@ -11,53 +11,52 @@ import (
 )
 
 func TestParseRequest(t *testing.T) {
-	assert := assert.New(t)
-
 	tests := []struct {
+		name          string
 		requestURI    string
 		authorization string
 		expectedKey   clientKey
 		expectedURI   string
 		expectedError string // only the message
 	}{
-		// URI without host
 		{
+			name:          "URI without host",
 			requestURI:    "/",
 			expectedError: "host missing in request URI",
 		},
-		// URI without destination host
 		{
+			name:          "URI without destination host",
 			requestURI:    "http://example.com/",
 			expectedError: "destination host missing in request URI",
 		},
-		// Invalid port number
 		{
+			name:          "Invalid port number",
 			requestURI:    "http://example.com:99999/localhost",
 			expectedError: "parsing \"99999\": invalid port number",
 		},
-		// URI without slash after target host
 		{
+			name:          "URI without slash after target host",
 			requestURI:    "http://example.com/localhost",
 			authorization: "Basic dGVzdA==",
 			expectedKey:   clientKey{host: "example.com", port: 22, username: "test"},
 			expectedURI:   "http://localhost",
 		},
-		// Hostname without port and credentials
 		{
+			name:          "Hostname without port and credentials",
 			requestURI:    "http://example.com/localhost/metrics?foo=bar",
 			authorization: "Basic cHJvbWV0aGV1czo=",
 			expectedKey:   clientKey{host: "example.com", port: 22, username: "prometheus"},
 			expectedURI:   "http://localhost/metrics?foo=bar",
 		},
-		// IPv4 address with port
 		{
+			name:          "IPv4 address with port",
 			requestURI:    "http://127.0.0.1:22/localhost:9100/",
 			authorization: "Basic dXNlcjpzZWNyZXQ=",
 			expectedKey:   clientKey{host: "127.0.0.1", port: 22, username: "user"},
 			expectedURI:   "http://localhost:9100/",
 		},
-		// IPv6 with port
 		{
+			name:        "IPv6 with port",
 			requestURI:  "http://[fe80::1]:2222/[fe80::2]:9100/metrics",
 			expectedKey: clientKey{host: "fe80::1", port: 2222},
 			expectedURI: "http://[fe80::2]:9100/metrics",
@@ -65,45 +64,54 @@ func TestParseRequest(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		r := http.Request{
-			RequestURI: test.requestURI,
-			Header:     http.Header{},
-		}
+		t.Run(test.name, func(t *testing.T) {
+			assert := assert.New(t)
 
-		if test.authorization != "" {
-			r.Header.Add("Authorization", test.authorization)
-		}
+			r := http.Request{
+				RequestURI: test.requestURI,
+				Header:     http.Header{},
+			}
 
-		key, uri, err := parseRequest(&r)
+			if test.authorization != "" {
+				r.Header.Add("Authorization", test.authorization)
+			}
 
-		if test.expectedError != "" {
-			assert.EqualError(err, test.expectedError)
-		} else {
-			assert.NoError(err)
-			assert.Equal(&test.expectedKey, key)
-			assert.Equal(test.expectedURI, uri)
-		}
+			key, uri, err := parseRequest(&r)
+
+			if test.expectedError != "" {
+				assert.EqualError(err, test.expectedError)
+			} else {
+				assert.NoError(err)
+				assert.Equal(&test.expectedKey, key)
+				assert.Equal(test.expectedURI, uri)
+			}
+		})
 	}
 }
 func TestClientKeyToString(t *testing.T) {
 	assert := assert.New(t)
 
 	tests := []struct {
+		name     string
 		input    clientKey
 		expected string
 	}{
 		{
+			name:     "host with port",
 			input:    clientKey{host: "example.com", port: 22},
 			expected: "example.com:22",
 		},
 		{
+			name:     "host with port and username",
 			input:    clientKey{host: "example.com", port: 22, username: "prometheus"},
 			expected: "prometheus@example.com:22",
 		},
 	}
 
 	for _, test := range tests {
-		assert.Equal(test.expected, test.input.String())
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(test.expected, test.input.String())
+		})
 	}
 }
 
