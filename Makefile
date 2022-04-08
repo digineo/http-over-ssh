@@ -19,7 +19,7 @@ snapshot: github_token ## release HEAD as "$last_tag-next"
 
 .PHONY: clean
 clean: ## removes the dist directory
-	rm -rf ./dist/
+	rm -rf ./dist/ coverage.out
 
 .PHONY: github_token
 github_token:
@@ -27,3 +27,16 @@ github_token:
 		echo >&2 "\033[1;31mMissing GITHUB_TOKEN env var\033[0m"; \
 		exit 1; \
 	fi
+
+
+## testing
+
+.PHONY: coverage.out
+coverage.out:
+	go test -race -covermode=atomic -coverprofile=$@ ./...
+
+coverage.html: coverage.out
+	go tool cover -html $< -o $@
+
+.PHONY: test
+test: coverage.out ## runs tests
