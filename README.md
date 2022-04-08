@@ -1,7 +1,7 @@
 HTTP over SSH
 =============
 
-[![CircleCI](https://circleci.com/gh/digineo/http-over-ssh.svg?style=shield)](https://circleci.com/gh/digineo/http-over-ssh)
+[![Test](https://github.com/digineo/http-over-ssh/actions/workflows/test.yml/badge.svg)](https://github.com/digineo/http-over-ssh/actions/workflows/test.yml)
 [![Codecov](http://codecov.io/github/digineo/http-over-ssh/coverage.svg?branch=master)](http://codecov.io/github/digineo/http-over-ssh?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/digineo/http-over-ssh)](https://goreportcard.com/report/github.com/digineo/http-over-ssh)
 
