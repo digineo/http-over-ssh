@@ -16,7 +16,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	"golang.org/x/crypto/ssh"
 )
 
@@ -81,7 +80,7 @@ func TestHTTP(t *testing.T) {
 		User:    "prometheus",
 		Auth:    authMethods,
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			// TODO implement this
+			// always successful
 			return nil
 		},
 	}
@@ -191,7 +190,6 @@ func serveHTTP(listener net.Listener) {
 		Handler: &mux,
 	}
 	httpServer.Serve(listener)
-
 }
 
 func serveProxy(listener net.Listener, proxy *Proxy) {
@@ -272,7 +270,7 @@ func handleChannel(newChannel ssh.NewChannel) {
 }
 
 func serve(cssh ssh.Channel, conn net.Conn) {
-	close := func() {
+	closeAll := func() {
 		cssh.Close()
 		conn.Close()
 	}
@@ -280,10 +278,10 @@ func serve(cssh ssh.Channel, conn net.Conn) {
 	var once sync.Once
 	go func() {
 		io.Copy(cssh, conn)
-		once.Do(close)
+		once.Do(closeAll)
 	}()
 	go func() {
 		io.Copy(conn, cssh)
-		once.Do(close)
+		once.Do(closeAll)
 	}()
 }

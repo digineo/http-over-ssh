@@ -1,4 +1,4 @@
-name: Test
+name: Lint
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -32,9 +32,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.go-version }}-go-
 
-      - name: Run tests
-        run: make test
-
-      - uses: codecov/codecov-action@v2
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v3
         with:
-          file: coverage.out
+          version: latest
+          skip-cache: true

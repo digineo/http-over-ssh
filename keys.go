@@ -7,7 +7,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// Reads a SSH private key file
+// Reads a SSH private key file.
 func getKeyFile(path string) (ssh.Signer, error) {
 	buf, err := ioutil.ReadFile(path)
 	if err != nil {

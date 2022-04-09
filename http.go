@@ -31,8 +31,7 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	removeHopHeaders(r.Header)
 
 	// do the request
-	client := proxy.getClient(*key)
-	res, err := client.httpClient.Do(r)
+	res, err := proxy.getClient(*key).httpClient.Do(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		fmt.Fprintln(w, err.Error())
@@ -49,7 +48,7 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func parseRequest(r *http.Request) (*clientKey, string, error) {
 	target, err := url.Parse(r.RequestURI)
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("unable to parse URI: %w", err)
 	}
 
 	if target.Host == "" {
@@ -83,7 +82,6 @@ func parseRequest(r *http.Request) (*clientKey, string, error) {
 		} else {
 			key.username = string(decoded)
 		}
-
 	}
 
 	return &key, target.Scheme + ":/" + target.RequestURI(), nil

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -21,14 +22,14 @@ type client struct {
 	mtx        sync.Mutex
 }
 
-// clientKey is used for reusing SSH connections
+// clientKey is used for reusing SSH connections.
 type clientKey struct {
 	host     string
 	port     uint16
 	username string
 }
 
-// hostPort returns the host joined with the port
+// hostPort returns the host joined with the port.
 func (key *clientKey) hostPort() string {
 	return net.JoinHostPort(key.host, strconv.Itoa(int(key.port)))
 }
@@ -41,7 +42,7 @@ func (key *clientKey) String() string {
 	return fmt.Sprintf("%s@%s", key.username, hp)
 }
 
-// establishes the SSH connection and sets up the HTTP client
+// establishes the SSH connection and sets up the HTTP client.
 func (client *client) connect() error {
 	sshClient, err := ssh.Dial("tcp", client.key.hostPort(), &client.sshConfig)
 	if err != nil {
@@ -57,7 +58,7 @@ func (client *client) connect() error {
 	return nil
 }
 
-// establishes a TCP connection through SSH
+// establishes a TCP connection through SSH.
 func (client *client) dial(network, address string) (net.Conn, error) {
 	client.mtx.Lock()
 	defer client.mtx.Unlock()
@@ -73,7 +74,7 @@ retry:
 
 	conn, err := client.sshClient.Dial(network, address)
 
-	if err != nil && !retried && (err == io.EOF || !client.isAlive()) {
+	if err != nil && !retried && (errors.Is(err, io.EOF) || !client.isAlive()) {
 		// ssh connection broken
 		client.sshClient.Close()
 		client.sshClient = nil
@@ -99,5 +100,6 @@ retry:
 // checks if the SSH client is still alive by sending a keep alive request.
 func (client *client) isAlive() bool {
 	_, _, err := client.sshClient.Conn.SendRequest("keepalive@openssh.com", true, nil)
+
 	return err == nil
 }
