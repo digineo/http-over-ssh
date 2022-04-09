@@ -40,3 +40,9 @@ coverage.html: coverage.out
 
 .PHONY: test
 test: coverage.out ## runs tests
+
+## development
+
+.PHONY: lint
+lint: ## runs golangci-lint on source files
+	golangci-lint run

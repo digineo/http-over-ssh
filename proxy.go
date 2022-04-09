@@ -9,21 +9,21 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// Proxy holds the HTTP client and the SSH connection pool
+// Proxy holds the HTTP client and the SSH connection pool.
 type Proxy struct {
 	clients   map[clientKey]*client
 	sshConfig ssh.ClientConfig
 	mtx       sync.Mutex
 }
 
-// NewProxy creates a new proxy
+// NewProxy creates a new proxy.
 func NewProxy() *Proxy {
 	return &Proxy{
 		clients: make(map[clientKey]*client),
 	}
 }
 
-// getClient returns a (un)connected SSH client
+// getClient returns a (un)connected SSH client.
 func (proxy *Proxy) getClient(key clientKey) *client {
 	proxy.mtx.Lock()
 	defer proxy.mtx.Unlock()

@@ -21,6 +21,7 @@ var home = func() string {
 	if err == nil && user.HomeDir != "" {
 		return user.HomeDir
 	}
+
 	return os.Getenv("HOME")
 }()
 
@@ -34,7 +35,7 @@ var (
 	proxy      *Proxy
 )
 
-// command line flags
+// command line flags.
 var (
 	listen        = envStr("HOS_LISTEN", "[::1]:8080")
 	enableMetrics = envStr("HOS_METRICS", "1") != "0"
@@ -42,7 +43,7 @@ var (
 	sshTimeout    = envDur("HOS_TIMEOUT", 10*time.Second)
 )
 
-// build flags
+// build flags.
 var (
 	version = "dev"
 	commit  = "none"

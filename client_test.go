@@ -11,6 +11,8 @@ import (
 )
 
 func TestParseRequest(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name          string
 		requestURI    string
@@ -65,6 +67,7 @@ func TestParseRequest(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			assert := assert.New(t)
 
 			r := http.Request{
@@ -88,7 +91,10 @@ func TestParseRequest(t *testing.T) {
 		})
 	}
 }
+
 func TestClientKeyToString(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	tests := []struct {
@@ -116,6 +122,8 @@ func TestClientKeyToString(t *testing.T) {
 }
 
 func TestGetClient(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	proxy := NewProxy()
@@ -135,6 +143,8 @@ func TestGetClient(t *testing.T) {
 }
 
 func TestClientDialHTTPS(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	proxy := NewProxy()
@@ -149,6 +159,8 @@ func TestClientDialHTTPS(t *testing.T) {
 }
 
 func TestInvalidRequestURI(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	w := httptest.NewRecorder()
@@ -165,5 +177,5 @@ func TestInvalidRequestURI(t *testing.T) {
 
 	assert.NoError(err)
 	assert.Equal(400, res.StatusCode)
-	assert.Equal(`parse "%zz": invalid URL escape "%zz"`+"\n", string(body))
+	assert.Equal(`unable to parse URI: parse "%zz": invalid URL escape "%zz"`+"\n", string(body))
 }

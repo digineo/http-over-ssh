@@ -7,6 +7,8 @@ import (
 )
 
 func TestKeyFile(t *testing.T) {
+	t.Parallel()
+
 	_, err := getKeyFile("fixtures/id_ed25519")
 	assert.NoError(t, err)
 
@@ -15,6 +17,8 @@ func TestKeyFile(t *testing.T) {
 }
 
 func TestReadPrivateKeys(t *testing.T) {
+	t.Parallel()
+
 	keys := readPrivateKeys("does-not-exists", "fixtures/id_ed25519")
 	assert.Len(t, keys, 1)
 }

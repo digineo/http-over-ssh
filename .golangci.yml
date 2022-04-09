@@ -1,14 +1,22 @@
 linters:
   enable-all: true
   disable:
+  - exhaustivestruct
+  - forbidigo
   - gochecknoglobals
+  - ireturn
+  - nlreturn
+  - testpackage
+  - varnamelen
 
 issues:
   exclude-rules:
   - path: _test\.go
     linters:
     - errcheck
+    - funlen
     - interfacer
     - maligned
-    - funlen
+    - nilnil
+    - noctx
     - scopelint
