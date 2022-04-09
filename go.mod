@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/prometheus/client_golang v1.12.1
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.1
 	golang.org/x/crypto v0.0.0-20220408190544-5352b0902921
 )
 
