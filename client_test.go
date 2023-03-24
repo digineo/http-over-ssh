@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -116,6 +116,7 @@ func TestClientKeyToString(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(test.expected, test.input.String())
 		})
 	}
@@ -166,13 +167,13 @@ func TestInvalidRequestURI(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := &http.Request{
 		RequestURI: "%zz",
-		Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+		Body:       io.NopCloser(bytes.NewReader(nil)),
 	}
 
 	NewProxy().ServeHTTP(w, r)
 
 	res := w.Result()
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	res.Body.Close()
 
 	assert.NoError(err)
