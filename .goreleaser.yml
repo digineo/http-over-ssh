@@ -1,3 +1,6 @@
+---
+version: 2
+
 # Make sure to check the documentation at http://goreleaser.com
 project_name: http-over-ssh
 
@@ -16,9 +19,6 @@ release:
 
 checksum:
   name_template: 'checksums.txt'
-
-snapshot:
-  name_template: "{{ .Tag }}-next"
 
 changelog:
   sort:       asc
