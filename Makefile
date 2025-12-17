@@ -1,5 +1,3 @@
-export GO111MODULE=on
-
 .PHONY: help
 help: ## prints this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \

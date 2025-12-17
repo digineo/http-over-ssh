@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -102,7 +101,7 @@ func TestHTTP(t *testing.T) {
 		assert.EqualValues(0, metrics.forwardings.failed)
 		assert.Equal(200, response.StatusCode)
 
-		bytes, _ := ioutil.ReadAll(response.Body)
+		bytes, _ := io.ReadAll(response.Body)
 		assert.Equal("Hello World", string(bytes))
 		response.Body.Close()
 	}
@@ -150,7 +149,7 @@ func TestHTTP(t *testing.T) {
 		assert.NoError(err)
 		if response != nil {
 			assert.Equal(200, response.StatusCode)
-			bytes, _ := ioutil.ReadAll(response.Body)
+			bytes, _ := io.ReadAll(response.Body)
 			assert.Contains(string(bytes), `sshproxy_connections_total{state="established"} 1`)
 			response.Body.Close()
 		}

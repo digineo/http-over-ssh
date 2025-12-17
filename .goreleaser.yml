@@ -1,3 +1,6 @@
+---
+version: 2
+
 # Make sure to check the documentation at http://goreleaser.com
 project_name: http-over-ssh
 
@@ -10,37 +13,12 @@ builds:
   goarch: [amd64, arm64]
   env:
   - CGO_ENABLED=0
-  ignore:
-  - goos:   freebsd
-    goarch: arm64
-  - goos:   darwin
-    goarch: arm64
-  - goos:   windows
-    goarch: arm64
-
-archive:
-  replacements:
-    darwin:   macOS
-    windows:  win
-    amd64:    64-bit
-
-dockers:
-  - binary:   http-over-ssh
-    goos:     linux
-    goarch:   amd64
-    image_templates:
-    - "digineo/http-over-ssh:latest"
-    - "digineo/http-over-ssh:{{ .Version }}"
-    skip_push: true
 
 release:
   prerelease: auto
 
 checksum:
   name_template: 'checksums.txt'
-
-snapshot:
-  name_template: "{{ .Tag }}-next"
 
 changelog:
   sort:       asc
