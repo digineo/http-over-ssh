@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/prometheus/client_golang v1.23.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.41.0
 )
 
