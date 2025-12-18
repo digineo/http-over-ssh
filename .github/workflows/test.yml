@@ -24,6 +24,6 @@ jobs:
       - name: Run tests
         run: make test
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           file: coverage.out
