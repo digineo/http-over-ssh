@@ -16,7 +16,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.24'
+          go-version: '1.25'
 
       - name: Checkout code
         uses: actions/checkout@v6
@@ -26,4 +26,4 @@ jobs:
 
       - uses: codecov/codecov-action@v6
         with:
-          file: coverage.out
+          files: coverage.out
