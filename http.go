@@ -15,12 +15,11 @@ import (
 const defaultPort = 22
 
 func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	key, uri, err := parseRequest(r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -33,8 +32,7 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// do the request
 	res, err := proxy.getClient(*key).httpClient.Do(r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
-		fmt.Fprintln(w, err.Error())
+		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
 
@@ -42,7 +40,7 @@ func (proxy *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	copyHeader(w.Header(), res.Header)
 	w.WriteHeader(res.StatusCode)
 	_, _ = io.Copy(w, res.Body)
-	res.Body.Close()
+	_ = res.Body.Close()
 }
 
 func parseRequest(r *http.Request) (*clientKey, string, error) {
@@ -75,13 +73,10 @@ func parseRequest(r *http.Request) (*clientKey, string, error) {
 	}
 
 	// Parse username
-	if auth := r.Header.Get("Authorization"); strings.HasPrefix(auth, "Basic ") {
-		decoded, _ := base64.StdEncoding.DecodeString(auth[6:])
-		if i := bytes.IndexByte(decoded, ':'); i != -1 {
-			key.username = string(decoded[:i])
-		} else {
-			key.username = string(decoded)
-		}
+	if auth, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Basic "); ok {
+		decoded, _ := base64.StdEncoding.DecodeString(auth)
+		username, _, _ := bytes.Cut(decoded, []byte{':'})
+		key.username = string(username)
 	}
 
 	return &key, target.Scheme + ":/" + target.RequestURI(), nil

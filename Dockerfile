@@ -5,12 +5,11 @@ RUN apk --no-cache add tzdata ca-certificates \
 
 COPY http-over-ssh /
 
-ENV ZONEINFO    /zoneinfo.zip
-ENV HOS_USER    root
-ENV HOS_TIMEOUT 10s
-ENV HOS_KEY_DIR /data
-ENV HOS_LISTEN  :8080
-ENV HOS_METRICS 1
+ENV HOS_USER=root \
+    HOS_TIMEOUT=10s \
+    HOS_KEY_DIR=/data \
+    HOS_LISTEN=:8080 \
+    HOS_METRICS=1
 EXPOSE 8080
 
 WORKDIR /data

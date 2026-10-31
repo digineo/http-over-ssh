@@ -5,15 +5,15 @@ help: ## prints this help
 
 .PHONY: dry-run
 dry-run: ## prepares a release, but does not publish it
-	goreleaser release --rm-dist --skip-publish
+	goreleaser release --clean --skip=publish
 
 .PHONY: release
 release: github_token ## release the current tag
-	goreleaser release --rm-dist
+	goreleaser release --clean
 
 .PHONY: snapshot
-snapshot: github_token ## release HEAD as "$last_tag-next"
-	goreleaser release --rm-dist --snapshot --skip-publish
+snapshot: ## build HEAD as "$last_tag-next"
+	goreleaser release --clean --snapshot
 
 .PHONY: clean
 clean: ## removes the dist directory

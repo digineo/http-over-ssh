@@ -36,17 +36,13 @@ func TestHTTP(t *testing.T) {
 	require := require.New(t)
 	assert := assert.New(t)
 
-	assert.EqualValues(0, metrics.connections.established)
-	assert.EqualValues(0, metrics.connections.failed)
-	assert.EqualValues(0, metrics.forwardings.established)
-	assert.EqualValues(0, metrics.forwardings.failed)
+	assert.EqualValues(0, metrics.connections.established.Load())
+	assert.EqualValues(0, metrics.connections.failed.Load())
+	assert.EqualValues(0, metrics.forwardings.established.Load())
+	assert.EqualValues(0, metrics.forwardings.failed.Load())
 
 	prometheus.MustRegister(&metrics)
 	defer prometheus.Unregister(&metrics)
-
-	sshPort := "127.0.0.1:10022"
-	httpPort := "127.0.0.1:10080"
-	proxyPort := "127.0.0.1:10081"
 
 	config := &ssh.ServerConfig{
 		PublicKeyCallback: func(c ssh.ConnMetadata, pubKey ssh.PublicKey) (*ssh.Permissions, error) {
@@ -59,17 +55,13 @@ func TestHTTP(t *testing.T) {
 	require.NoError(err)
 	config.AddHostKey(private)
 
-	sshListener, err := net.Listen("tcp", sshPort)
-	require.NoError(err)
-	defer sshListener.Close()
+	sshListener := listenLocal(t)
+	httpListener := listenLocal(t)
+	proxyListener := listenLocal(t)
 
-	httpListener, err := net.Listen("tcp", httpPort)
-	require.NoError(err)
-	defer httpListener.Close()
-
-	proxyListener, err := net.Listen("tcp", proxyPort)
-	require.NoError(err)
-	defer proxyListener.Close()
+	sshPort := sshListener.Addr().String()
+	httpPort := httpListener.Addr().String()
+	proxyPort := proxyListener.Addr().String()
 
 	authMethods := readPrivateKeys("fixtures/id_ed25519")
 
@@ -96,9 +88,9 @@ func TestHTTP(t *testing.T) {
 	assert.NoError(err)
 	if response != nil {
 		assert.Equal(httpPort, lastRequest.Host)
-		assert.EqualValues(1, metrics.connections.established)
-		assert.EqualValues(1, metrics.forwardings.established)
-		assert.EqualValues(0, metrics.forwardings.failed)
+		assert.EqualValues(1, metrics.connections.established.Load())
+		assert.EqualValues(1, metrics.forwardings.established.Load())
+		assert.EqualValues(0, metrics.forwardings.failed.Load())
 		assert.Equal(200, response.StatusCode)
 
 		bytes, _ := io.ReadAll(response.Body)
@@ -120,10 +112,10 @@ func TestHTTP(t *testing.T) {
 		response, err := client.Get(fmt.Sprintf("http://%s/%s/test", sshPort, "localhost:10000"))
 		assert.NoError(err)
 		if response != nil {
-			assert.EqualValues(1, metrics.connections.established)
-			assert.EqualValues(0, metrics.connections.failed)
-			assert.EqualValues(1, metrics.forwardings.established)
-			assert.EqualValues(1, metrics.forwardings.failed)
+			assert.EqualValues(1, metrics.connections.established.Load())
+			assert.EqualValues(0, metrics.connections.failed.Load())
+			assert.EqualValues(1, metrics.forwardings.established.Load())
+			assert.EqualValues(1, metrics.forwardings.failed.Load())
 			assert.Equal(http.StatusBadGateway, response.StatusCode)
 			response.Body.Close()
 		}
@@ -135,10 +127,10 @@ func TestHTTP(t *testing.T) {
 		assert.NoError(err)
 		if response != nil {
 			assert.Equal(http.StatusBadGateway, response.StatusCode)
-			assert.EqualValues(1, metrics.connections.established)
-			assert.EqualValues(1, metrics.connections.failed)
-			assert.EqualValues(1, metrics.forwardings.established)
-			assert.EqualValues(1, metrics.forwardings.failed)
+			assert.EqualValues(1, metrics.connections.established.Load())
+			assert.EqualValues(1, metrics.connections.failed.Load())
+			assert.EqualValues(1, metrics.forwardings.established.Load())
+			assert.EqualValues(1, metrics.forwardings.failed.Load())
 			response.Body.Close()
 		}
 	}
@@ -158,8 +150,7 @@ func TestHTTP(t *testing.T) {
 	// Close HTTP server and SSH connections, SSH connection should be re-established,
 	// forwarding should fail
 	{
-		// Just closing the httpListener has no effect with Go 1.11
-		// So we need to do more work
+		// Closing the listener does not close active connections
 		httpServer.Close()
 		for _, client := range proxy.clients {
 			if client := client.sshClient; client != nil {
@@ -170,12 +161,23 @@ func TestHTTP(t *testing.T) {
 		response, err := client.Get(fmt.Sprintf("http://%s/%s/test", sshPort, httpPort))
 		assert.NoError(err)
 		assert.Equal(http.StatusBadGateway, response.StatusCode)
-		assert.EqualValues(2, metrics.connections.established)
-		assert.EqualValues(1, metrics.connections.failed)
-		assert.EqualValues(1, metrics.forwardings.established)
-		assert.EqualValues(2, metrics.forwardings.failed)
+		assert.EqualValues(2, metrics.connections.established.Load())
+		assert.EqualValues(1, metrics.connections.failed.Load())
+		assert.EqualValues(1, metrics.forwardings.established.Load())
+		assert.EqualValues(2, metrics.forwardings.failed.Load())
 		response.Body.Close()
 	}
+}
+
+// listenLocal opens a listener on a random local port.
+func listenLocal(t *testing.T) net.Listener {
+	t.Helper()
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = listener.Close() })
+
+	return listener
 }
 
 func serveHTTP(listener net.Listener) {

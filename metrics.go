@@ -1,12 +1,14 @@
 package main
 
 import (
+	"sync/atomic"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 type connectionStats struct {
-	established uint
-	failed      uint
+	established atomic.Uint64
+	failed      atomic.Uint64
 }
 
 type prometheusExporter struct {
@@ -40,15 +42,15 @@ func (e *prometheusExporter) Describe(c chan<- *prometheus.Desc) {
 }
 
 // Collect implements (part of the) prometheus.Collector interface.
-func (e prometheusExporter) Collect(c chan<- prometheus.Metric) {
+func (e *prometheusExporter) Collect(c chan<- prometheus.Metric) {
 	const C = prometheus.CounterValue
 	const G = prometheus.GaugeValue
 	met := prometheus.MustNewConstMetric
 
-	c <- met(metrics.conns, C, float64(e.connections.established), "established")
-	c <- met(metrics.conns, C, float64(e.connections.failed), "failed")
-	c <- met(metrics.fwds, C, float64(e.forwardings.established), "established")
-	c <- met(metrics.fwds, C, float64(e.forwardings.failed), "failed")
+	c <- met(metrics.conns, C, float64(e.connections.established.Load()), "established")
+	c <- met(metrics.conns, C, float64(e.connections.failed.Load()), "failed")
+	c <- met(metrics.fwds, C, float64(e.forwardings.established.Load()), "established")
+	c <- met(metrics.fwds, C, float64(e.forwardings.failed.Load()), "failed")
 
 	proxy.mtx.Lock()
 	for key, client := range proxy.clients {

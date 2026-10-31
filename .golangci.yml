@@ -7,3 +7,8 @@ linters:
   - nlreturn
   - testpackage
   - varnamelen
+  exclusions:
+    rules:
+    - path: _test\.go
+      linters:
+      - errcheck

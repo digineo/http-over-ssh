@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"net"
 	"net/http"
@@ -53,8 +54,8 @@ func (proxy *Proxy) getClient(key clientKey) *client {
 	}
 	pClient.httpClient = &http.Client{
 		Transport: &http.Transport{
-			Dial: pClient.dial,
-			DialTLS: func(network, addr string) (net.Conn, error) {
+			DialContext: pClient.dial,
+			DialTLSContext: func(context.Context, string, string) (net.Conn, error) {
 				return nil, errors.New("not implemented")
 			},
 		},

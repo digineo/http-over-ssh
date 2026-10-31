@@ -79,14 +79,21 @@ func main() {
 		HostKeyCallback: hostKeyCallback,
 	}
 
+	mux := http.NewServeMux()
 	if enableMetrics {
 		prometheus.MustRegister(&metrics)
-		http.Handle("/metrics", promhttp.Handler())
+		mux.Handle("/metrics", promhttp.Handler())
+	}
+	mux.Handle("/", proxy)
+
+	server := &http.Server{
+		Addr:              listen,
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	http.Handle("/", proxy)
 	log.Println("listening on", listen)
-	log.Fatal(http.ListenAndServe(listen, nil))
+	log.Fatal(server.ListenAndServe())
 }
 
 func envStr(name, fallback string) string {

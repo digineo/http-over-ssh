@@ -2,7 +2,7 @@ HTTP over SSH
 =============
 
 [![Test](https://github.com/digineo/http-over-ssh/actions/workflows/test.yml/badge.svg)](https://github.com/digineo/http-over-ssh/actions/workflows/test.yml)
-[![Codecov](http://codecov.io/github/digineo/http-over-ssh/coverage.svg?branch=master)](http://codecov.io/github/digineo/http-over-ssh?branch=master)
+[![Codecov](https://codecov.io/gh/digineo/http-over-ssh/branch/main/graph/badge.svg)](https://codecov.io/gh/digineo/http-over-ssh)
 [![Go Report Card](https://goreportcard.com/badge/github.com/digineo/http-over-ssh)](https://goreportcard.com/report/github.com/digineo/http-over-ssh)
 
 
@@ -68,10 +68,10 @@ Prometheus metrics can be retrieved via `/metrics`.
 If you have the Go toolchain installed, a simple
 
 ```console
-$ go get github.com/digineo/http-over-ssh
+$ go install github.com/digineo/http-over-ssh@latest
 ```
 
-will place a `http-over-ssh` binary in `$GOPATH/bin/`.
+will place a `http-over-ssh` binary in `$(go env GOPATH)/bin/`.
 
 Alternatively, you may download a pre-built binary from the Github
 [release page][releases] and extract the binary into your `$PATH`.

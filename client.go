@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -46,51 +47,51 @@ func (key *clientKey) String() string {
 func (client *client) connect() error {
 	sshClient, err := ssh.Dial("tcp", client.key.hostPort(), &client.sshConfig)
 	if err != nil {
-		metrics.connections.failed++
+		metrics.connections.failed.Add(1)
 		log.Printf("SSH connection to %s failed: %v", client.key.String(), err)
 		return err
 	}
 
 	client.sshClient = sshClient
-	metrics.connections.established++
+	metrics.connections.established.Add(1)
 	log.Printf("SSH connection to %s established", client.key.String())
 
 	return nil
 }
 
 // establishes a TCP connection through SSH.
-func (client *client) dial(network, address string) (net.Conn, error) {
+func (client *client) dial(ctx context.Context, network, address string) (net.Conn, error) {
 	client.mtx.Lock()
 	defer client.mtx.Unlock()
 
-	retried := false
+	var conn net.Conn
+	var err error
 
-retry:
-	if client.sshClient == nil {
-		if err := client.connect(); err != nil {
-			return nil, err
+	for retried := false; ; retried = true {
+		if client.sshClient == nil {
+			if err := client.connect(); err != nil {
+				return nil, err
+			}
 		}
-	}
 
-	conn, err := client.sshClient.Dial(network, address)
+		conn, err = client.sshClient.DialContext(ctx, network, address)
+		if err == nil || retried || (!errors.Is(err, io.EOF) && client.isAlive()) {
+			break
+		}
 
-	if err != nil && !retried && (errors.Is(err, io.EOF) || !client.isAlive()) {
 		// ssh connection broken
-		client.sshClient.Close()
+		_ = client.sshClient.Close()
 		client.sshClient = nil
 
 		// Clean up idle HTTP connections
 		client.httpClient.Transport.(*http.Transport).CloseIdleConnections()
-
-		retried = true
-		goto retry
 	}
 
 	if err == nil {
-		metrics.forwardings.established++
+		metrics.forwardings.established.Add(1)
 		log.Printf("TCP forwarding via %s to %s established", client.key.String(), address)
 	} else {
-		metrics.forwardings.failed++
+		metrics.forwardings.failed.Add(1)
 		log.Printf("TCP forwarding via %s to %s failed: %s", client.key.String(), address, err)
 	}
 
@@ -99,7 +100,7 @@ retry:
 
 // checks if the SSH client is still alive by sending a keep alive request.
 func (client *client) isAlive() bool {
-	_, _, err := client.sshClient.Conn.SendRequest("keepalive@openssh.com", true, nil)
+	_, _, err := client.sshClient.SendRequest("keepalive@openssh.com", true, nil)
 
 	return err == nil
 }
